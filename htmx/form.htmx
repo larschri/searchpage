@@ -1,0 +1,13 @@
+<form>
+	<input class="form-control"
+	       type="search"
+	       name="search"
+	       placeholder="Begin Typing To Search ..."
+	       autofocus
+	       hx-get="q"
+	       hx-trigger="keyup changed delay:200ms, search, load"
+	       hx-target="#searchresult"
+	       hx-swap="innerHTML"
+	       hx-indicator=".htmx-indicator">
+</form>
+<div id="searchresult" />
