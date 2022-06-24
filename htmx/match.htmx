@@ -1,0 +1,10 @@
+<details>
+	  <summary>
+	    {{ .Name }} <small><i>{{ .Type }}</i></small>
+	    <br>
+	    <small><i>{{ .Taxonomy }}</i></small>
+	  </summary>
+	  <span hx-get="{{ .Url }}"
+		hx-trigger="toggle once from:closest details">
+	  </span>
+</details>

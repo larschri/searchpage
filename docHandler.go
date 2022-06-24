@@ -1,26 +1,69 @@
 package pestotrap
 
 import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"html"
 	"net/http"
 
+	bhttp "github.com/blevesearch/bleve/v2/http"
 	"github.com/gorilla/mux"
 )
 
-func (h *Handler) documentLookupHandler(w http.ResponseWriter, r *http.Request) {
+// jsonBuffer will buffer if content type is json, so we can apply formatting.
+type jsonBuffer struct {
+	http.ResponseWriter
+	buf bytes.Buffer
+}
 
-	vars := mux.Vars(r)
+func (m *jsonBuffer) isJSON() bool {
+	return m.Header().Get("Content-Type") == "application/json"
+}
 
-	index, ok := h.indices[vars["index"]]
-	if !ok {
-		http.Error(w, "Missing index", http.StatusBadRequest)
+func (m *jsonBuffer) Write(b []byte) (int, error) {
+	if m.isJSON() {
+		return m.buf.Write(b)
+	}
+
+	return m.ResponseWriter.Write(b)
+}
+
+func (m *jsonBuffer) pretty() string {
+	if m.buf.Len() == 0 {
+		return ""
+	}
+
+	var out bytes.Buffer
+	json.Indent(&out, m.buf.Bytes(), "", "  ")
+	return out.String()
+}
+
+var bleveDocHandler = bhttp.DocGetHandler{
+	IndexNameLookup: func(r *http.Request) string {
+		vars := mux.Vars(r)
+		return vars["index"]
+	},
+
+	DocIDLookup: func(r *http.Request) string {
+		vars := mux.Vars(r)
+		return vars["id"]
+	},
+}
+
+func docHandler(w http.ResponseWriter, r *http.Request) {
+	buf := &jsonBuffer{w, bytes.Buffer{}}
+
+	bleveDocHandler.ServeHTTP(buf, r)
+
+	if !buf.isJSON() {
 		return
 	}
-	if ixf, ok := index.(interface {
-		ServeHTTPx(w http.ResponseWriter, r *http.Request)
-	}); ok {
-		ixf.ServeHTTPx(w, r)
+
+	if r.Header.Get("Hx-Request") == "true" {
+		fmt.Fprintf(w, "<pre>%s</pre>", html.EscapeString(buf.pretty()))
 		return
 	}
 
-	rawDocumentHandler(w, r)
+	w.Write([]byte(buf.pretty()))
 }

@@ -5,16 +5,27 @@ import (
 	"html/template"
 	"io"
 	"net/http"
-	"net/url"
+
+	_ "embed"
 
 	"github.com/blevesearch/bleve/v2"
 	"github.com/blevesearch/bleve/v2/search"
 )
 
-type Config struct {
-	IndexHTML []byte
+//go:embed htmx/form.htmx
+var formHTML []byte
 
-	RenderPage func(w io.Writer, matches []*search.DocumentMatch, nextPage *url.URL)
+//go:embed htmx/match.htmx
+var matchHTML string
+
+var matchTemplate = template.Must(template.New("t").Parse(matchHTML))
+
+type Config struct {
+	FormHTML []byte
+
+	RenderResults func(w io.Writer, matches []*search.DocumentMatch)
+
+	RenderNextPageLink func(w io.Writer, nextPage string)
 
 	PageSize int
 
@@ -24,14 +35,14 @@ type Config struct {
 var DefaultConfig = Config{
 	PageSize: 30,
 
-	RenderPage: func(w io.Writer, matches []*search.DocumentMatch, nextPage *url.URL) {
+	RenderResults: func(w io.Writer, matches []*search.DocumentMatch) {
 		for _, m := range matches {
 			renderK8sMatch(w, m)
 		}
+	},
 
-		if nextPage != nil {
-			fmt.Fprintf(w, `<div hx-get="%s" hx-trigger="revealed"/>`, nextPage.String())
-		}
+	RenderNextPageLink: func(w io.Writer, nextPage string) {
+		fmt.Fprintf(w, `<div hx-get="%s" hx-trigger="revealed"/>`, nextPage)
 	},
 
 	Request: func(r *http.Request) *bleve.SearchRequest {
@@ -48,26 +59,14 @@ var DefaultConfig = Config{
 }
 
 func init() {
-	DefaultConfig.IndexHTML = indexHtml
+	DefaultConfig.FormHTML = formHTML
 }
-
-var matchTemplate = template.Must(template.New("t").Parse(`
-<details>
-	  <summary>
-	    {{ .Name }} <small><i>{{ .Type }}</i></small>
-	    <br>
-	    <small><i>{{ .Location }}</i></small>
-	  </summary>
-	  <span hx-get="{{ .Url }}"
-		hx-trigger="toggle once from:closest details">
-	  </span>
-</details>`))
 
 func renderMatch(w io.Writer, m *search.DocumentMatch) {
 	matchTemplate.Execute(w, map[string]string{
 		"Name":     m.ID,
 		"Type":     "",
-		"Location": m.Index,
+		"Taxonomy": m.Index,
 		"Url":      "d/" + m.Index + "/" + m.ID,
 	})
 }
@@ -76,7 +75,7 @@ func renderK8sMatch(w io.Writer, m *search.DocumentMatch) {
 	matchTemplate.Execute(w, map[string]interface{}{
 		"Name":     m.Fields["metadata.name"],
 		"Type":     m.Fields["kind"],
-		"Location": m.Index,
+		"Taxonomy": m.Index,
 		"Url":      "d/" + m.Index + "/" + m.ID,
 	})
 }

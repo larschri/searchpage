@@ -1,27 +1,9 @@
 package pestotrap
 
 import (
-	"fmt"
-	"html/template"
 	"net/http"
-	"net/url"
 	"strconv"
-
-	"github.com/blevesearch/bleve/v2/search"
 )
-
-func (h *Handler) writeMatch(w http.ResponseWriter, m *search.DocumentMatch) {
-	ix := h.indices[m.Index]
-
-	if ixf, ok := ix.(interface {
-		RenderFull(m *search.DocumentMatch) template.HTML
-	}); ok {
-		fmt.Fprint(w, ixf.RenderFull(m))
-		return
-	}
-
-	renderK8sMatch(w, m)
-}
 
 func (h *Handler) searchQueryHandler(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
@@ -30,9 +12,8 @@ func (h *Handler) searchQueryHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	request := DefaultConfig.Request(r)
-	pageSize := DefaultConfig.PageSize
-	request.Size = pageSize + 1
+	request := h.Config.Request(r)
+	request.Size = h.Config.PageSize
 
 	if len(r.Form["offset"]) > 0 {
 		request.From, _ = strconv.Atoi(r.Form["offset"][0])
@@ -44,14 +25,14 @@ func (h *Handler) searchQueryHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var nextPage *url.URL
-	if len(result.Hits) == request.Size {
-		q := r.URL.Query()
-		q.Set("offset", strconv.Itoa(request.From+DefaultConfig.PageSize))
-		r.URL.RawQuery = q.Encode()
-		nextPage = r.URL
-		result.Hits = result.Hits[0:DefaultConfig.PageSize]
+	h.Config.RenderResults(w, result.Hits)
+
+	nextOffset := uint64(request.From + h.Config.PageSize)
+	if nextOffset >= result.Total {
+		return
 	}
 
-	DefaultConfig.RenderPage(w, result.Hits, nextPage)
+	q := r.URL.Query()
+	q.Set("offset", strconv.Itoa(request.From+h.Config.PageSize))
+	h.Config.RenderNextPageLink(w, "q?"+q.Encode())
 }
