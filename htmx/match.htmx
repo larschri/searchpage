@@ -4,7 +4,9 @@
 	    <br>
 	    <small><i>{{ .Taxonomy }}</i></small>
 	  </summary>
-	  <span hx-get="{{ .Url }}"
-		hx-trigger="toggle once from:closest details">
+	  <span aria-busy="true"
+		hx-get="{{ .Url }}"
+		hx-swap="outerHTML"
+		hx-trigger="toggle from:closest details">
 	  </span>
 </details>

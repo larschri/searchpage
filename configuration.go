@@ -18,10 +18,20 @@ var formHTML []byte
 //go:embed htmx/match.htmx
 var matchHTML string
 
-var matchTemplate = template.Must(template.New("t").Parse(matchHTML))
+//go:embed htmx/head.htmx
+var headHTML []byte
+
+//go:embed htmx/foot.htmx
+var footHTML []byte
+
+var DefaultMatch = template.Must(template.New("t").Parse(matchHTML))
 
 type Config struct {
 	FormHTML []byte
+
+	HeaderHTML []byte
+
+	FooterHTML []byte
 
 	RenderResults func(w io.Writer, matches []*search.DocumentMatch)
 
@@ -32,12 +42,47 @@ type Config struct {
 	Request func(r *http.Request) *bleve.SearchRequest
 }
 
+func (c *Config) initFrom(src *Config) {
+	if src.FormHTML != nil {
+		c.FormHTML = src.FormHTML
+	}
+
+	if src.HeaderHTML != nil {
+		c.HeaderHTML = src.HeaderHTML
+	}
+
+	if src.FooterHTML != nil {
+		c.FooterHTML = src.FooterHTML
+	}
+
+	if src.RenderResults != nil {
+		c.RenderResults = src.RenderResults
+	}
+
+	if src.RenderNextPageLink != nil {
+		c.RenderNextPageLink = src.RenderNextPageLink
+	}
+
+	if src.PageSize > 0 {
+		c.PageSize = src.PageSize
+	}
+
+	if src.Request != nil {
+		c.Request = src.Request
+	}
+}
+
 var DefaultConfig = Config{
 	PageSize: 30,
 
 	RenderResults: func(w io.Writer, matches []*search.DocumentMatch) {
 		for _, m := range matches {
-			renderK8sMatch(w, m)
+			DefaultMatch.Execute(w, map[string]interface{}{
+				"Name":     m.Fields["metadata.name"],
+				"Type":     m.Fields["kind"],
+				"Taxonomy": m.Index,
+				"Url":      "d/" + m.Index + "/" + m.ID,
+			})
 		}
 	},
 
@@ -60,22 +105,6 @@ var DefaultConfig = Config{
 
 func init() {
 	DefaultConfig.FormHTML = formHTML
-}
-
-func renderMatch(w io.Writer, m *search.DocumentMatch) {
-	matchTemplate.Execute(w, map[string]string{
-		"Name":     m.ID,
-		"Type":     "",
-		"Taxonomy": m.Index,
-		"Url":      "d/" + m.Index + "/" + m.ID,
-	})
-}
-
-func renderK8sMatch(w io.Writer, m *search.DocumentMatch) {
-	matchTemplate.Execute(w, map[string]interface{}{
-		"Name":     m.Fields["metadata.name"],
-		"Type":     m.Fields["kind"],
-		"Taxonomy": m.Index,
-		"Url":      "d/" + m.Index + "/" + m.ID,
-	})
+	DefaultConfig.HeaderHTML = headHTML
+	DefaultConfig.FooterHTML = footHTML
 }

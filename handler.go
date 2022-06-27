@@ -6,7 +6,6 @@ import (
 	"github.com/blevesearch/bleve/v2"
 	bhttp "github.com/blevesearch/bleve/v2/http"
 	"github.com/gorilla/mux"
-	"github.com/larschri/pestotrap/htmx"
 )
 
 type Handler struct {
@@ -20,7 +19,7 @@ func (h *Handler) indexHTMLHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(h.Config.FormHTML)
 }
 
-func New(indices ...bleve.Index) *Handler {
+func New(cfg *Config, indices ...bleve.Index) *Handler {
 	m := make(map[string]bleve.Index)
 
 	for _, ix := range indices {
@@ -35,7 +34,11 @@ func New(indices ...bleve.Index) *Handler {
 		bleve.NewIndexAlias(indices...),
 	}
 
-	h.Use(htmx.Middleware)
+	if cfg != nil {
+		h.initFrom(cfg)
+	}
+
+	h.Use(h.hxRequestMiddleware)
 	h.HandleFunc("/", h.indexHTMLHandler)
 	h.HandleFunc("/q", h.searchQueryHandler)
 	h.HandleFunc("/d/{index}/{id}", docHandler)
