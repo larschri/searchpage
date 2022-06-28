@@ -1,30 +1,20 @@
 package pestotrap
 
 import (
+	"embed"
 	"fmt"
 	"html/template"
 	"io"
 	"net/http"
 
-	_ "embed"
-
 	"github.com/blevesearch/bleve/v2"
 	"github.com/blevesearch/bleve/v2/search"
 )
 
-//go:embed htmx/form.htmx
-var formHTML []byte
+//go:embed htmx/*
+var htmxDir embed.FS
 
-//go:embed htmx/match.htmx
-var matchHTML string
-
-//go:embed htmx/head.htmx
-var headHTML []byte
-
-//go:embed htmx/foot.htmx
-var footHTML []byte
-
-var DefaultMatch = template.Must(template.New("t").Parse(matchHTML))
+var DefaultMatch = template.Must(template.ParseFS(htmxDir, "htmx/match.htmx"))
 
 type Config struct {
 	FormHTML []byte
@@ -104,7 +94,7 @@ var DefaultConfig = Config{
 }
 
 func init() {
-	DefaultConfig.FormHTML = formHTML
-	DefaultConfig.HeaderHTML = headHTML
-	DefaultConfig.FooterHTML = footHTML
+	DefaultConfig.FormHTML, _ = htmxDir.ReadFile("htmx/form.htmx")
+	DefaultConfig.HeaderHTML, _ = htmxDir.ReadFile("htmx/head.htmx")
+	DefaultConfig.FooterHTML, _ = htmxDir.ReadFile("htmx/foot.htmx")
 }
