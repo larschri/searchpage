@@ -23,7 +23,7 @@ type Config struct {
 
 	FooterHTML []byte
 
-	RenderResults func(w io.Writer, matches []*search.DocumentMatch)
+	RenderMatches func(w io.Writer, matches []*search.DocumentMatch)
 
 	RenderNextPageLink func(w io.Writer, nextPage string)
 
@@ -45,8 +45,8 @@ func (c *Config) initFrom(src *Config) {
 		c.FooterHTML = src.FooterHTML
 	}
 
-	if src.RenderResults != nil {
-		c.RenderResults = src.RenderResults
+	if src.RenderMatches != nil {
+		c.RenderMatches = src.RenderMatches
 	}
 
 	if src.RenderNextPageLink != nil {
@@ -65,7 +65,7 @@ func (c *Config) initFrom(src *Config) {
 var DefaultConfig = Config{
 	PageSize: 30,
 
-	RenderResults: func(w io.Writer, matches []*search.DocumentMatch) {
+	RenderMatches: func(w io.Writer, matches []*search.DocumentMatch) {
 		for _, m := range matches {
 			DefaultMatch.Execute(w, map[string]interface{}{
 				"Name":     m.Fields["metadata.name"],

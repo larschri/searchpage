@@ -25,7 +25,7 @@ func (h *Handler) searchQueryHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.Config.RenderResults(w, result.Hits)
+	h.Config.RenderMatches(w, result.Hits)
 
 	nextOffset := uint64(request.From + h.Config.PageSize)
 	if nextOffset >= result.Total {
