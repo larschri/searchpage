@@ -1,4 +1,4 @@
-# Pesto Trap
+# Search Page
 
 A small web frontend on top of blevesearch.
 

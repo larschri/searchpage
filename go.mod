@@ -1,4 +1,4 @@
-module github.com/larschri/pestotrap
+module github.com/larschri/searchpage
 
 go 1.18
 

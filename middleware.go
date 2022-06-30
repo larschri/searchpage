@@ -1,4 +1,4 @@
-package pestotrap
+package searchpage
 
 import (
 	_ "embed"
