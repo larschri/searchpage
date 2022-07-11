@@ -42,6 +42,6 @@ func New(cfg *Config, indices ...bleve.Index) *Handler {
 	r.Use(h.hxRequestMiddleware)
 	r.HandleFunc("/", h.indexHTMLHandler)
 	r.HandleFunc("/q", h.searchQueryHandler)
-	r.HandleFunc("/d/{index}/{id}", docHandler)
+	r.HandleFunc("/d", docHandler)
 	return &h
 }

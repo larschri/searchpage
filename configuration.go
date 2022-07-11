@@ -26,7 +26,7 @@ var (
 					"Name":     m.ID,
 					"Type":     "",
 					"Taxonomy": m.Index,
-					"Url":      "d/" + m.Index + "/" + m.ID,
+					"Url":      "d?index=" + m.Index + "&doc=" + m.ID,
 				})
 			}
 		},

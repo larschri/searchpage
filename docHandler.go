@@ -8,7 +8,6 @@ import (
 	"net/http"
 
 	bhttp "github.com/blevesearch/bleve/v2/http"
-	"github.com/gorilla/mux"
 )
 
 // jsonBuffer will buffer if content type is json, so we can apply formatting.
@@ -41,13 +40,11 @@ func (m *jsonBuffer) pretty() string {
 
 var bleveDocHandler = bhttp.DocGetHandler{
 	IndexNameLookup: func(r *http.Request) string {
-		vars := mux.Vars(r)
-		return vars["index"]
+		return r.URL.Query().Get("index")
 	},
 
 	DocIDLookup: func(r *http.Request) string {
-		vars := mux.Vars(r)
-		return vars["id"]
+		return r.URL.Query().Get("doc")
 	},
 }
 
