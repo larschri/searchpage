@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html"
 	"net/http"
+	"net/url"
 
 	bhttp "github.com/blevesearch/bleve/v2/http"
 	"github.com/gorilla/mux"
@@ -42,7 +43,12 @@ func (m *jsonBuffer) pretty() string {
 var bleveDocHandler = bhttp.DocGetHandler{
 	IndexNameLookup: func(r *http.Request) string {
 		vars := mux.Vars(r)
-		return vars["index"]
+		// Unescape to allow slashes in index name
+		index, err := url.QueryUnescape(vars["index"])
+		if err != nil {
+			return vars["index"]
+		}
+		return index
 	},
 
 	DocIDLookup: func(r *http.Request) string {
