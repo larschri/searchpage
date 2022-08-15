@@ -8,6 +8,7 @@ import (
 func (h *Handler) searchQueryHandler(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
+		w.Header().Add("HX-Trigger", `{"setValidSearchInput":false}`)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -21,10 +22,12 @@ func (h *Handler) searchQueryHandler(w http.ResponseWriter, r *http.Request) {
 
 	result, err := h.alias.Search(request)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		w.Header().Add("HX-Trigger", `{"setValidSearchInput":false}`)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
+	w.Header().Add("HX-Trigger", `{"setValidSearchInput":true}`)
 	h.Config.RenderMatches(w, result.Hits)
 
 	nextOffset := uint64(request.From + h.Config.PageSize)

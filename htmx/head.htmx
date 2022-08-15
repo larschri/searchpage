@@ -11,18 +11,36 @@
 <div style="float: left; padding: 1em">
 
 	<script>
-	htmx.on("htmx:responseError", function(e) {
-	htmx.find("#errdialogheader").innerHTML = e.detail.xhr.status;
-	htmx.find("#errdialogbody").innerHTML = e.detail.xhr.responseText;
-	htmx.find("#errdialog").open = true;
-	document.documentElement.classList
-		.add("modal-is-open", "modal-is-opening");
-	})
+	htmx.on("htmx:responseError", openErrDialog)
+	htmx.on("htmx:sendError", openErrDialog)
+	htmx.on("setValidSearchInput", setValidSearchInput)
+
+	function setValidSearchInput(e) {
+		htmx.find("#searchInput").
+			setAttribute("aria-invalid", !e.detail.value)
+	}
+
+	function openErrDialog(e) {
+		if (e.detail.xhr.getResponseHeader("hx-trigger")) {
+			return
+		}
+
+		header = e.detail.xhr.status;
+		if (!header) {
+			header = e.detail.error
+		}
+
+		htmx.find("#errdialogheader").innerHTML = header;
+		htmx.find("#errdialogbody").innerHTML = e.detail.xhr.responseText;
+		htmx.find("#errdialog").open = true;
+		document.documentElement.classList
+			.add("modal-is-open", "modal-is-opening");
+	}
 
 	function closeErrDialog() {
-	htmx.find("#errdialog").open = false;
-	document.documentElement.classList
-		.remove("modal-is-open", "modal-is-opening");
+		htmx.find("#errdialog").open = false;
+		document.documentElement.classList
+			.remove("modal-is-open", "modal-is-opening");
 	}
 	</script>
 
